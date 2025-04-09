@@ -4,7 +4,7 @@ import pandas as pd
 from tensorflow.keras.models import load_model
 
 # Load model
-model = load_model("model.h5")
+model = load_model("trained_model.pkl")
 
 # App Title
 st.title("Admission Prediction")
