@@ -8,6 +8,7 @@ with open("trained_model.pkl", "rb") as file:
 
 # Streamlit app UI
 st.set_page_config(page_title="Admission Chance Predictor", page_icon="🎓")
+
 st.title("🎓 Admission Chance Predictor")
 st.markdown("Fill out the details below to predict your chance of admission.")
 
@@ -23,7 +24,24 @@ research = st.selectbox("Research Experience", ["No", "Yes"])
 # Prediction
 if st.button("🎯 Predict Admission Chance"):
     try:
-        input_data = np.array([[gre, toefl, univ_rating, sop, lor, cgpa, 1 if research == "Yes" else 0]], dtype=float)
+        # Create one-hot encoding for university rating
+        univ_rating_1 = 1 if univ_rating == 1 else 0
+        univ_rating_2 = 1 if univ_rating == 2 else 0
+        univ_rating_3 = 1 if univ_rating == 3 else 0
+        univ_rating_4 = 1 if univ_rating == 4 else 0
+        univ_rating_5 = 1 if univ_rating == 5 else 0
+        
+        # Create one-hot encoding for research
+        research_0 = 1 if research == "No" else 0
+        research_1 = 1 if research == "Yes" else 0
+        
+        # Prepare input array with all 12 features in the correct order
+        input_data = np.array([
+            [gre, toefl, sop, lor, cgpa,  # First 5 features
+             univ_rating_1, univ_rating_2, univ_rating_3, univ_rating_4, univ_rating_5,  # University rating one-hot
+             research_0, research_1]  # Research one-hot
+        ], dtype=float)
+        
         prediction = model.predict(input_data)[0]
         st.success(f"📈 Predicted Chance of Admission: {prediction * 100:.2f}%")
     except Exception as e:
