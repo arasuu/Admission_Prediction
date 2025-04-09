@@ -1,50 +1,91 @@
 import streamlit as st
 import numpy as np
 import pickle
+from sklearn.metrics import accuracy_score, confusion_matrix
 
-# Load the trained model
-with open("trained_model.pkl", "rb") as file:
-    model = pickle.load(file)
+# Load model and scaler (if used during training)
+with open("trained_model.pkl", "rb") as f:
+    model = pickle.load(f)
 
-# Streamlit UI
-st.title("🎓 Admission Predictor (Yes/No)")
-st.markdown("Will you get admitted? Fill in your details to find out!")
+# App UI
+st.set_page_config(page_title="Admission Predictor", layout="wide")
+st.title("🎓 University Admission Predictor")
+st.markdown("Predict if you'll be admitted based on your academic profile")
 
-# Input fields
-col1, col2 = st.columns(2)
-with col1:
-    gre = st.number_input("GRE Score", min_value=260, max_value=340, value=320)
-    toefl = st.number_input("TOEFL Score", min_value=0, max_value=120, value=100)
-    cgpa = st.number_input("CGPA (0-10)", min_value=0.0, max_value=10.0, value=8.0)
-with col2:
-    sop = st.slider("SOP Strength", 1.0, 5.0, step=0.5, value=3.0)
-    lor = st.slider("LOR Strength", 1.0, 5.0, step=0.5, value=3.0)
-    univ_rating = st.selectbox("University Rating", [1, 2, 3, 4, 5])
-    research = st.radio("Research Experience", ["No", "Yes"])
+# Input Section
+with st.sidebar:
+    st.header("Your Profile")
+    gre = st.slider("GRE Score", 260, 340, 320)
+    toefl = st.slider("TOEFL Score", 0, 120, 100)
+    cgpa = st.slider("CGPA", 0.0, 10.0, 8.0, step=0.1)
+    sop = st.slider("Statement of Purpose (1-5)", 1.0, 5.0, 3.0, step=0.5)
+    lor = st.slider("Letter of Rec (1-5)", 1.0, 5.0, 3.0, step=0.5)
+    research = st.radio("Research Experience", ["No", "Yes"], index=1)
+    univ_rating = st.selectbox("University Rating", [1, 2, 3, 4, 5], index=2)
+    threshold = st.slider("Prediction Threshold", 0.1, 0.9, 0.5, 0.05,
+                         help="Higher values make predictions more conservative")
 
-if st.button("🚀 Predict Admission"):
-    try:
-        # One-hot encoding
-        univ_ratings = [1 if i == univ_rating else 0 for i in range(1, 6)]
-        research_encoded = [1 if research == "No" else 0, 1 if research == "Yes" else 0]
+# Prediction Logic
+def predict_admission():
+    # One-hot encoding
+    univ_ratings = [1 if i == univ_rating else 0 for i in range(1, 6)]
+    research_encoded = [1 if research == "No" else 0, 1 if research == "Yes" else 0]
+    
+    # Feature order MUST match training data
+    features = [
+        gre, toefl, sop, lor, cgpa,
+        *univ_ratings,
+        *research_encoded
+    ]
+    
+    # Convert to numpy array
+    input_data = np.array(features).reshape(1, -1)
+    
+    # Get prediction
+    if hasattr(model, "predict_proba"):
+        proba = model.predict_proba(input_data)[0][1]
+        prediction = 1 if proba >= threshold else 0
+    else:
+        prediction = model.predict(input_data)[0]
+        proba = None
+    
+    return prediction, proba, features
+
+# Run Prediction
+if st.button("Predict Admission"):
+    prediction, proba, features = predict_admission()
+    
+    # Display Results
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Result")
+        if prediction == 1:
+            st.success("🎉 **Admitted!**", icon="✅")
+        else:
+            st.error("❌ Not Admitted", icon="🚫")
         
-        # Feature order: GRE, TOEFL, SOP, LOR, CGPA, Univ_Ratings, Research
-        features = [gre, toefl, sop, lor, cgpa, *univ_ratings, *research_encoded]
-        
-        # Predict (0 or 1)
-        prediction = model.predict([features])[0]
-        
-        # Display "Yes" or "No"
-        result = "✅ Yes" if prediction == 1 else "❌ No"
-        st.success(f"**Prediction:** {result}")
-        
-        # Debug (optional)
+        if proba is not None:
+            st.metric("Confidence", f"{proba*100:.1f}%")
+    
+    with col2:
         with st.expander("Debug Details"):
-            st.write("Features sent:", features)
+            st.write("**Features sent to model:**", features)
             if hasattr(model, "feature_names_in_"):
-                st.write("Model expects:", model.feature_names_in_)
+                st.write("**Model expects:**", list(model.feature_names_in_))
             
-    except Exception as e:
-        st.error(f"Error: {str(e)}")
-
-
+            # Sample test cases
+            st.write("\n**Test Cases:**")
+            test_cases = {
+                "Strong Candidate": [340, 120, 5.0, 5.0, 9.5, 1,0,0,0,0, 0,1],
+                "Weak Candidate": [260, 80, 1.0, 1.0, 6.0, 0,0,0,0,1, 1,0]
+            }
+            
+            for name, case in test_cases.items():
+                if hasattr(model, "predict_proba"):
+                    case_proba = model.predict_proba([case])[0][1]
+                    case_pred = 1 if case_proba >= threshold else 0
+                else:
+                    case_pred = model.predict([case])[0]
+                    case_proba = None
+                
+                st.write(f"{
