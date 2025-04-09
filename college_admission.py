@@ -44,7 +44,12 @@ input_dict = {
 input_df = pd.DataFrame([input_dict])
 
 # Ensure feature alignment
-input_df = input_df.reindex(columns=model.feature_names_in_, fill_value=0)
+expected_columns = [
+    'GRE_Score', 'TOEFL_Score', 'SOP', 'LOR', 'CGPA',
+    'University_Rating_2', 'University_Rating_3', 
+    'University_Rating_4', 'University_Rating_5', 'Research_1'
+]
+input_df = pd.DataFrame([input_dict])[expected_columns]
 
 if st.button("🔮 Predict Admission"):
     prediction = model.predict(input_df)[0]
