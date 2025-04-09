@@ -15,6 +15,11 @@ cgpa = st.number_input("CGPA (0-10)", min_value=0.0, max_value=10.0, value=8.0)
 univ_rating = st.selectbox("University Rating", [1, 2, 3, 4, 5], index=2)
 research = st.radio("Research Experience", ["No", "Yes"], index=1)
 
+
+bad_student = [260, 80, 1.0, 1.0, 6.0, 0, 0, 0, 0, 1, 1, 0]  # Low scores, no research
+prediction = model.predict_proba([bad_student])[0][1]
+print(f"Worst-case prediction: {prediction}") 
+
 if st.button("Predict Admission Chance"):
     try:
         # One-hot encode university rating (5 columns)
@@ -47,6 +52,3 @@ if st.button("Predict Admission Chance"):
         st.error(f"Error: {str(e)}")
 
 
-bad_student = [260, 80, 1.0, 1.0, 6.0, 0, 0, 0, 0, 1, 1, 0]  # Low scores, no research
-prediction = model.predict_proba([bad_student])[0][1]
-print(f"Worst-case prediction: {prediction}") 
