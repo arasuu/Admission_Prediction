@@ -1,7 +1,8 @@
 matplotlib
 seaborn
 streamlit>=1.32
-pandas>=2.0
-numpy>=1.24
-scikit-learn>=1.3
-tensorflow>=2.12,<2.15  # Avoid newer builds that may break on 3.12
+pandas
+numpy
+scikit-learn
+tensorflow==2.12.0
+
