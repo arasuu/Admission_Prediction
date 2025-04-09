@@ -26,7 +26,11 @@ X_dummy = np.random.rand(100, 7)
 scaler.fit(X_dummy)
 
 model = Sequential()
-model.add(Dense(10, input_dim=7, activation='relu'))
+from keras.layers import Input
+
+model.add(Input(shape=(7,)))
+model.add(Dense(10, activation='relu'))
+
 model.add(Dense(8, activation='relu'))
 model.add(Dense(1, activation='linear'))
 model.compile(loss='mean_squared_error', optimizer='adam')
