@@ -45,3 +45,8 @@ if st.button("Predict Admission Chance"):
             
     except Exception as e:
         st.error(f"Error: {str(e)}")
+
+
+bad_student = [260, 80, 1.0, 1.0, 6.0, 0, 0, 0, 0, 1, 1, 0]  # Low scores, no research
+prediction = model.predict_proba([bad_student])[0][1]
+print(f"Worst-case prediction: {prediction}") 
