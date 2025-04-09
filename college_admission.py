@@ -88,4 +88,18 @@ if st.button("Predict Admission"):
                     case_pred = model.predict([case])[0]
                     case_proba = None
                 
-                st.write(f"{
+                st.write(f"{name}: {'✅' if case_pred else '❌'} "
+                        f"(Confidence: {case_proba*100:.1f}%)" if case_proba else "")
+
+# Model Metrics (from your screenshot)
+st.divider()
+st.subheader("Model Performance Metrics")
+col1, col2 = st.columns(2)
+with col1:
+    st.metric("Accuracy", "90%")
+with col2:
+    st.write("**Confusion Matrix:**")
+    st.table([[63, 6], [4, 27]])
+
+# Footer
+st.caption("Note: Model thresholds can be adjusted for more conservative predictions")
