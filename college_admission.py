@@ -1,27 +1,24 @@
 import streamlit as st
 import numpy as np
-import pandas as pd
-from tensorflow.keras.models import load_model
+import pickle
 
-# Load model
-model = load_model("trained_model.pkl")
+# Load the trained model
+with open("trained_model.pkl", "rb") as file:
+    model = pickle.load(file)
 
-# App Title
-st.title("Admission Prediction")
+# Streamlit app UI
+st.title("🎓 Admission Chance Predictor")
 
-# User Input
-gre = st.number_input("GRE Score", 0, 340)
-toefl = st.number_input("TOEFL Score", 0, 120)
-university_rating = st.slider("University Rating", 1, 5)
-sop = st.slider("SOP Strength (1-5)", 1.0, 5.0, step=0.5)
-lor = st.slider("LOR Strength (1-5)", 1.0, 5.0, step=0.5)
-cgpa = st.number_input("CGPA (0-10)", 0.0, 10.0, step=0.1)
+gre = st.number_input("GRE Score", min_value=0, max_value=340)
+toefl = st.number_input("TOEFL Score", min_value=0, max_value=120)
+univ_rating = st.slider("University Rating", 1, 5)
+sop = st.slider("SOP Strength", 1.0, 5.0, step=0.5)
+lor = st.slider("LOR Strength", 1.0, 5.0, step=0.5)
+cgpa = st.number_input("CGPA (0-10)", min_value=0.0, max_value=10.0)
 research = st.selectbox("Research Experience", ["No", "Yes"])
 
-# Convert input
-input_data = np.array([[gre, toefl, university_rating, sop, lor, cgpa, 1 if research == "Yes" else 0]])
+if st.button("🎯 Predict Admission Chance"):
+    input_data = np.array([[gre, toefl, univ_rating, sop, lor, cgpa, 1 if research == "Yes" else 0]])
+    prediction = model.predict(input_data)[0]
 
-# Predict
-if st.button("Predict Admission Chance"):
-    prediction = model.predict(input_data)
-    st.success(f"Predicted Chance of Admission: {prediction[0][0]*100:.2f}%")
+    st.success(f"📈 Predicted Chance of Admission: {prediction*100:.2f}%")
