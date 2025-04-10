@@ -3,13 +3,16 @@ import pickle
 import pandas as pd
 import numpy as np
 
+# ✅ Set page config FIRST
+st.set_page_config(page_title="Admission Predictor", page_icon="🎓", layout="centered")
+
 # Load model and scaler
 model = pickle.load(open('trained_model.pkl', 'rb'))
-scaler = pickle.load(open('scaler.pkl', 'rb'))  # Make sure this was saved after one-hot encoding
+scaler = pickle.load(open('scaler.pkl', 'rb'))  # Saved after one-hot encoding during training
 
 # Page title
 st.title("🎓 Neural Network Admission Predictor")
-st.markdown("Fill in your academic profile to predict your admission chance!")
+st.markdown("Enter your academic profile to predict your admission chance!")
 
 # Input fields
 gre_score = st.number_input("GRE Score", min_value=260, max_value=340, value=320)
@@ -43,23 +46,17 @@ input_df = pd.DataFrame({
     'University_Rating_5': [rating_encoding[4]],
 })
 
-# Debug info (optional)
-# st.write("🔍 Input Data:", input_df)
-
-# Predict button
+# Button to trigger prediction
 if st.button("Predict Admission"):
     try:
         # Scale the input
         input_scaled = scaler.transform(input_df)
 
-        # Predict probabilities
+        # Predict probability
         prob = model.predict_proba(input_scaled)[0][1]
+        st.markdown(f"📊 **Predicted Admission Probability: {prob*100:.2f}%**")
 
-        st.markdown(f"📊 **Predicted Probability of Admission: {prob*100:.2f}%**")
-
-        # Set threshold for admission
-        threshold = 0.5
-        if prob >= threshold:
+        if prob >= 0.5:
             st.success("🎉 Congratulations! You are likely to be admitted!")
         else:
             st.warning("😞 Sorry, you may not be admitted.")
