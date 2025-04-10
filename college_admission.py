@@ -46,23 +46,25 @@ input_data = pd.DataFrame({
     'University_Rating_5': [university_rating[4]],
 })
 
-# Show the input data to the user for debugging
+# Display input data (for debugging)
 st.write("Input Data:", input_data)
 
-# Ensure input_data is correctly shaped and scaled
-scaled_input = scale_input(input_data)
+# Add the "Predict" button
+if st.button("Predict"):
+    # Ensure input_data is correctly shaped and scaled
+    scaled_input = scale_input(input_data)
 
-# Check the scaled input values before prediction
-st.write("Scaled Input:", scaled_input)
+    # Check the scaled input values before prediction
+    st.write("Scaled Input:", scaled_input)
 
-# Predict the admission chance
-try:
-    prediction = model.predict(scaled_input)
-    st.write("Prediction:", prediction)
+    # Predict the admission chance
+    try:
+        prediction = model.predict(scaled_input)
+        st.write("Prediction:", prediction)
 
-    if prediction[0] == 1:
-        st.write("🎉 Congratulations! You are likely to be admitted!")
-    else:
-        st.write("😞 Sorry, you may not be admitted.")
-except ValueError as e:
-    st.error(f"Prediction Error: {str(e)}")
+        if prediction[0] == 1:
+            st.write("🎉 Congratulations! You are likely to be admitted!")
+        else:
+            st.write("😞 Sorry, you may not be admitted.")
+    except ValueError as e:
+        st.error(f"Prediction Error: {str(e)}")
