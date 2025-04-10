@@ -1,62 +1,58 @@
 import streamlit as st
-import joblib
-import numpy as np
+import pickle
 import pandas as pd
-import os
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
-st.set_page_config(page_title="🎓 UCLA Admission Predictor", layout="centered")
-st.title("🎓 Neural Network Admission Predictor")
+# Load the trained model
+model = pickle.load(open('trained_model.pkl', 'rb'))
 
-# Load trained model
-model_path = 'trained_model.pkl'
-if not os.path.exists(model_path):
-    st.error("❌ Model not found. Please train the model using `train.py`.")
-    st.stop()
+# Function to scale the input features using MinMaxScaler
+def scale_input(input_data):
+    scaler = MinMaxScaler()
+    return scaler.fit_transform(input_data)
 
-model = joblib.load(model_path)
+# Streamlit UI
+st.title("Admission Chance Prediction")
 
-# Input form
-st.subheader("📋 Enter your academic profile:")
+# User inputs for the features
+gre_score = st.number_input("GRE Score", min_value=0, max_value=340, value=320)
+toefl_score = st.number_input("TOEFL Score", min_value=0, max_value=120, value=110)
+sop = st.slider("Statement of Purpose (SOP) Strength", 1.0, 5.0, 4.0)
+lor = st.slider("Letter of Recommendation (LOR) Strength", 1.0, 5.0, 4.0)
+cgpa = st.number_input("CGPA", min_value=0.0, max_value=10.0, value=8.5)
+research = st.radio("Research Experience", ("No", "Yes"))
 
-gre = st.slider("GRE Score", 260, 340, 310)
-toefl = st.slider("TOEFL Score", 0, 120, 100)
-rating = st.selectbox("University Rating", [1, 2, 3, 4, 5], index=2)
-sop = st.slider("SOP Strength (1-5)", 1.0, 5.0, 3.0, step=0.5)
-lor = st.slider("LOR Strength (1-5)", 1.0, 5.0, 3.0, step=0.5)
-cgpa = st.slider("CGPA (out of 10)", 6.0, 10.0, 8.5, step=0.1)
-research = st.radio("Research Experience", ["Yes", "No"]) == "Yes"
+# Convert research to binary
+research_binary = 1 if research == "Yes" else 0
 
-# One-hot encode University_Rating and Research
-input_dict = {
-    "GRE_Score": gre,
-    "TOEFL_Score": toefl,
-    "SOP": sop,
-    "LOR": lor,
-    "CGPA": cgpa,
-    "University_Rating_2": 1 if rating == 2 else 0,
-    "University_Rating_3": 1 if rating == 3 else 0,
-    "University_Rating_4": 1 if rating == 4 else 0,
-    "University_Rating_5": 1 if rating == 5 else 0,
-    "Research_1": 1 if research else 0
-}
+# University Rating (One-hot encoded, example for University_Rating_1)
+university_rating = [0, 0, 0, 1, 0]  # Assuming the user selects rating 4 out of 5
 
-# Convert to DataFrame
-input_df = pd.DataFrame([input_dict])
+# Combine all input features into a DataFrame
+input_data = pd.DataFrame({
+    'GRE_Score': [gre_score],
+    'TOEFL_Score': [toefl_score],
+    'SOP': [sop],
+    'LOR': [lor],
+    'CGPA': [cgpa],
+    'Research_0': [1 - research_binary],
+    'Research_1': [research_binary],
+    'University_Rating_1': [university_rating[0]],
+    'University_Rating_2': [university_rating[1]],
+    'University_Rating_3': [university_rating[2]],
+    'University_Rating_4': [university_rating[3]],
+    'University_Rating_5': [university_rating[4]],
+})
 
-# Ensure feature alignment
-expected_columns = [
-    'GRE_Score', 'TOEFL_Score', 'SOP', 'LOR', 'CGPA',
-    'University_Rating_2', 'University_Rating_3', 
-    'University_Rating_4', 'University_Rating_5', 'Research_1'
-]
-input_df = pd.DataFrame([input_dict])[expected_columns]
+# Scale the input data
+scaled_input = scale_input(input_data)
 
-if st.button("🔮 Predict Admission"):
-    prediction = model.predict(input_df)[0]
-    label = "🎉 High Chance of Admission!" if prediction == 1 else "❌ Low Chance of Admission"
+# Predict the admission chance
+prediction = model.predict(scaled_input)
 
-    st.subheader("📢 Prediction Result:")
-    st.markdown(f"### {label}")
-    
-    st.subheader("📈 Feature Overview:")
-    st.bar_chart(input_df.T.rename(columns={0: 'Value'}))
+# Show prediction result
+if prediction[0] == 1:
+    st.write("Congratulations! You are likely to be admitted!")
+else:
+    st.write("Sorry, you may not be admitted.")
