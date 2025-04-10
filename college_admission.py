@@ -13,14 +13,15 @@ def scale_input(input_data):
     return scaler.fit_transform(input_data)
 
 # Streamlit UI
-st.title("Admission Chance Prediction")
+st.title("🎓 Neural Network Admission Predictor")
+st.write("📋 Enter your academic profile:")
 
 # User inputs for the features
 gre_score = st.number_input("GRE Score", min_value=0, max_value=340, value=320)
 toefl_score = st.number_input("TOEFL Score", min_value=0, max_value=120, value=110)
 sop = st.slider("Statement of Purpose (SOP) Strength", 1.0, 5.0, 4.0)
 lor = st.slider("Letter of Recommendation (LOR) Strength", 1.0, 5.0, 4.0)
-cgpa = st.number_input("CGPA", min_value=0.0, max_value=10.0, value=8.5)
+cgpa = st.number_input("CGPA (out of 10)", min_value=0.0, max_value=10.0, value=8.5)
 research = st.radio("Research Experience", ("No", "Yes"))
 
 # Convert research to binary
@@ -45,16 +46,23 @@ input_data = pd.DataFrame({
     'University_Rating_5': [university_rating[4]],
 })
 
-# Scale the input data
+# Show the input data to the user for debugging
+st.write("Input Data:", input_data)
+
+# Ensure input_data is correctly shaped and scaled
 scaled_input = scale_input(input_data)
 
+# Check the scaled input values before prediction
+st.write("Scaled Input:", scaled_input)
+
+# Predict the admission chance
 try:
     prediction = model.predict(scaled_input)
     st.write("Prediction:", prediction)
+
     if prediction[0] == 1:
-        st.write("Congratulations! You are likely to be admitted!")
+        st.write("🎉 Congratulations! You are likely to be admitted!")
     else:
-        st.write("Sorry, you may not be admitted.")
+        st.write("😞 Sorry, you may not be admitted.")
 except ValueError as e:
     st.error(f"Prediction Error: {str(e)}")
-
