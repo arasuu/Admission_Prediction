@@ -1,4 +1,5 @@
 ##🎓 Neural Network Admission Predictor
+
 This project provides a Machine Learning model that predicts whether a student will be admitted to a university based on their academic profile.
 
 Features
