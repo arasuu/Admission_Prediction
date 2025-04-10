@@ -48,11 +48,13 @@ input_data = pd.DataFrame({
 # Scale the input data
 scaled_input = scale_input(input_data)
 
-# Predict the admission chance
-prediction = model.predict(scaled_input)
+try:
+    prediction = model.predict(scaled_input)
+    st.write("Prediction:", prediction)
+    if prediction[0] == 1:
+        st.write("Congratulations! You are likely to be admitted!")
+    else:
+        st.write("Sorry, you may not be admitted.")
+except ValueError as e:
+    st.error(f"Prediction Error: {str(e)}")
 
-# Show prediction result
-if prediction[0] == 1:
-    st.write("Congratulations! You are likely to be admitted!")
-else:
-    st.write("Sorry, you may not be admitted.")
