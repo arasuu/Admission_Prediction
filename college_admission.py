@@ -4,13 +4,13 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
-# Load the trained model
+# Load the trained model and scaler
 model = pickle.load(open('trained_model.pkl', 'rb'))
+scaler = pickle.load(open('scaler.pkl', 'rb'))  # Assuming you've saved your scaler during model training
 
-# Function to scale the input features using MinMaxScaler
+# Function to scale the input features using the saved scaler
 def scale_input(input_data):
-    scaler = MinMaxScaler()
-    return scaler.fit_transform(input_data)
+    return scaler.transform(input_data)  # Use transform instead of fit_transform
 
 # Streamlit UI
 st.title("🎓 Neural Network Admission Predictor")
@@ -68,3 +68,4 @@ if st.button("Predict"):
             st.write("😞 Sorry, you may not be admitted.")
     except ValueError as e:
         st.error(f"Prediction Error: {str(e)}")
+
