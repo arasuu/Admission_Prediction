@@ -3,14 +3,13 @@ import pickle
 import pandas as pd
 import numpy as np
 
-# ✅ Set page config FIRST
 st.set_page_config(page_title="Admission Predictor", page_icon="🎓", layout="centered")
 
 # Load model and scaler
 model = pickle.load(open('trained_model.pkl', 'rb'))
-scaler = pickle.load(open('scaler.pkl', 'rb'))  # Saved after one-hot encoding during training
+scaler = pickle.load(open('scaler.pkl', 'rb'))  # Make sure you saved this during training
 
-# Page title
+# UI
 st.title("🎓 Neural Network Admission Predictor")
 st.markdown("Enter your academic profile to predict your admission chance!")
 
@@ -23,43 +22,38 @@ cgpa = st.number_input("CGPA (out of 10)", min_value=6.0, max_value=10.0, value=
 research = st.radio("Research Experience", ("No", "Yes"))
 university_rating = st.selectbox("University Rating", [1, 2, 3, 4, 5])
 
-# Binary encode research
-research_binary = 1 if research == "Yes" else 0
+# Process binary and one-hot
+research_0 = 1 if research == "No" else 0
+research_1 = 1 if research == "Yes" else 0
 
-# One-hot encode university rating
-rating_encoding = [0, 0, 0, 0, 0]
-rating_encoding[university_rating - 1] = 1
+univ_ratings = [0] * 5
+univ_ratings[university_rating - 1] = 1
 
-# Create input dataframe
-input_df = pd.DataFrame({
-    'GRE_Score': [gre_score],
-    'TOEFL_Score': [toefl_score],
-    'SOP': [sop],
-    'LOR': [lor],
-    'CGPA': [cgpa],
-    'Research_0': [1 - research_binary],
-    'Research_1': [research_binary],
-    'University_Rating_1': [rating_encoding[0]],
-    'University_Rating_2': [rating_encoding[1]],
-    'University_Rating_3': [rating_encoding[2]],
-    'University_Rating_4': [rating_encoding[3]],
-    'University_Rating_5': [rating_encoding[4]],
-})
+# ✅ Correct column order
+columns = [
+    'GRE_Score', 'TOEFL_Score', 'SOP', 'LOR', 'CGPA',
+    'Research_0', 'Research_1',
+    'University_Rating_1', 'University_Rating_2', 'University_Rating_3', 'University_Rating_4', 'University_Rating_5'
+]
 
-# Button to trigger prediction
+# Create input in exact order
+input_df = pd.DataFrame([[
+    gre_score, toefl_score, sop, lor, cgpa,
+    research_0, research_1,
+    univ_ratings[0], univ_ratings[1], univ_ratings[2], univ_ratings[3], univ_ratings[4]
+]], columns=columns)
+
+# Predict on button click
 if st.button("Predict Admission"):
     try:
-        # Scale the input
         input_scaled = scaler.transform(input_df)
-
-        # Predict probability
         prob = model.predict_proba(input_scaled)[0][1]
+
         st.markdown(f"📊 **Predicted Admission Probability: {prob*100:.2f}%**")
 
         if prob >= 0.5:
             st.success("🎉 Congratulations! You are likely to be admitted!")
         else:
             st.warning("😞 Sorry, you may not be admitted.")
-
     except Exception as e:
         st.error(f"❌ An error occurred: {e}")
