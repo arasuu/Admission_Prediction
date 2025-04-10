@@ -3,55 +3,60 @@ import pickle
 import pandas as pd
 import numpy as np
 
-st.set_page_config(page_title="Admission Predictor", page_icon="🎓", layout="centered")
-
-# Load model and scaler
+# Load the trained model and scaler
 model = pickle.load(open('trained_model.pkl', 'rb'))
-scaler = pickle.load(open('scaler.pkl', 'rb'))
+scaler = pickle.load(open('scaler.pkl', 'rb'))  # Make sure you saved this during training
 
 st.title("🎓 Neural Network Admission Predictor")
-st.markdown("Enter your academic profile to predict your admission chance!")
+st.write("📋 Enter your academic profile:")
 
-# Input
+# Input fields
 gre_score = st.number_input("GRE Score", min_value=260, max_value=340, value=320)
 toefl_score = st.number_input("TOEFL Score", min_value=0, max_value=120, value=110)
-sop = st.slider("SOP Strength (1-5)", 1.0, 5.0, 4.0)
-lor = st.slider("LOR Strength (1-5)", 1.0, 5.0, 4.0)
+sop = st.slider("Statement of Purpose (SOP) Strength", 1.0, 5.0, 4.0)
+lor = st.slider("Letter of Recommendation (LOR) Strength", 1.0, 5.0, 4.0)
 cgpa = st.number_input("CGPA (out of 10)", min_value=6.0, max_value=10.0, value=8.5)
 research = st.radio("Research Experience", ("No", "Yes"))
-university_rating = st.selectbox("University Rating", [1, 2, 3, 4, 5])
+university_rating = st.selectbox("University Rating (1-5)", [1, 2, 3, 4, 5])
 
-# Binary + One-hot
+# Encode research and university rating (one-hot)
 research_0 = 1 if research == "No" else 0
 research_1 = 1 if research == "Yes" else 0
 
-univ_ratings = [0, 0, 0, 0, 0]
-univ_ratings[university_rating - 1] = 1
+# One-hot encode university rating
+univ_rating = [0] * 5
+univ_rating[university_rating - 1] = 1
 
-# Final feature input
-input_df = pd.DataFrame([[
-    gre_score, toefl_score, sop, lor, cgpa,
-    research_0, research_1,
-    univ_ratings[0], univ_ratings[1], univ_ratings[2], univ_ratings[3], univ_ratings[4]
-]], columns=[
+# Create final input feature list in the correct order
+feature_names = [
     'GRE_Score', 'TOEFL_Score', 'SOP', 'LOR', 'CGPA',
     'Research_0', 'Research_1',
     'University_Rating_1', 'University_Rating_2', 'University_Rating_3',
     'University_Rating_4', 'University_Rating_5'
-])
+]
 
-st.write("📋 Input Preview:")
+feature_values = [
+    gre_score, toefl_score, sop, lor, cgpa,
+    research_0, research_1,
+    *univ_rating
+]
+
+# Create DataFrame with correct feature names and order
+input_df = pd.DataFrame([dict(zip(feature_names, feature_values))])
+
+# Debugging: Show raw and scaled input
+st.subheader("🔍 Input Summary")
 st.dataframe(input_df)
 
-if st.button("Predict Admission"):
+# Predict button
+if st.button("🎯 Predict Admission"):
     try:
-        input_scaled = scaler.transform(input_df)
-        prob = model.predict_proba(input_scaled)[0][1]
+        scaled_input = scaler.transform(input_df)
+        prediction = model.predict(scaled_input)
 
-        st.markdown(f"📊 **Predicted Admission Probability: {prob*100:.2f}%**")
-        if prob >= 0.5:
+        if prediction[0] == 1:
             st.success("🎉 Congratulations! You are likely to be admitted!")
         else:
-            st.warning("😞 Sorry, you may not be admitted.")
+            st.error("😞 Sorry, you may not be admitted.")
     except Exception as e:
-        st.error(f"❌ An error occurred: {e}")
+        st.error(f"❌ An error occurred: {str(e)}")
